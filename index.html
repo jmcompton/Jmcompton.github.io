@@ -18,6 +18,9 @@
         th {
             background-color: #f4f4f4;
         }
+        .stats {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -42,6 +45,11 @@
     <tbody>
         <!-- Data rows will be populated here -->
     </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3" class="stats">Calculating statistics...</td>
+        </tr>
+    </tfoot>
 </table>
 
 <script>
@@ -68,6 +76,7 @@
             });
 
             populateTable(filteredData);
+            calculateStatistics(filteredData);
         } catch (error) {
             console.error('Error fetching data:', error);
         }
@@ -107,6 +116,38 @@
 
             tableBody.appendChild(row);
         });
+    }
+
+    function calculateStatistics(data) {
+        const speeds = data.map(item => item.speed).filter(speed => !isNaN(speed));
+
+        if (speeds.length === 0) {
+            updateFooter('No numerical data available for statistics.');
+            return;
+        }
+
+        const mean = (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(2);
+
+        const sortedSpeeds = speeds.slice().sort((a, b) => a - b);
+        const middle = Math.floor(sortedSpeeds.length / 2);
+        const median = sortedSpeeds.length % 2 === 0
+            ? ((sortedSpeeds[middle - 1] + sortedSpeeds[middle]) / 2).toFixed(2)
+            : sortedSpeeds[middle].toFixed(2);
+
+        const frequency = {};
+        speeds.forEach(speed => {
+            frequency[speed] = (frequency[speed] || 0) + 1;
+        });
+        const mode = Object.keys(frequency).reduce((a, b) =>
+            frequency[a] > frequency[b] ? a : b
+        );
+
+        updateFooter(`Mean: ${mean}, Median: ${median}, Mode: ${mode}`);
+    }
+
+    function updateFooter(text) {
+        const footer = document.querySelector('#dataTable tfoot tr td');
+        footer.textContent = text;
     }
 
     // Initial fetch to populate the table
