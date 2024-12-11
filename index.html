@@ -1,9 +1,117 @@
-<html>
-  <a href="details.html">Pitch 12345</a>
-  <head>
-    <title>Pitch Stats</title>
-  </head>
-  <body>
-    <h1>Trackman Pitch Stats Viewer</h1>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitch Stats Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+
+<h1 class="red">Trackman Pitch Stats Viewer</h1>
+<form onsubmit="fetchAndFilterData(event);">
+    <label>Starting date</label>
+    <input type="date" id="startdate">
+    <label>End date</label>
+    <input type="date" id="enddate">
+    <button type="submit">Filter</button>
+</form>
+
+<table id="dataTable">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Speed</th>
+            <th>Result</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Data rows will be populated here -->
+    </tbody>
+</table>
+
+<script>
+    const apiUrl = "https://compute.samford.edu/zohauth/clients/datajson";
+
+    async function fetchAndFilterData(event) {
+        event.preventDefault(); // Prevent form submission
+        const startDate = document.getElementById('startdate').value;
+        const endDate = document.getElementById('enddate').value;
+
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Filter data based on date range
+            const filteredData = data.filter(item => {
+                const itemDate = new Date(item.date); // Assuming the data has a 'date' field
+                return (!startDate || new Date(startDate) <= itemDate) &&
+                       (!endDate || itemDate <= new Date(endDate));
+            });
+
+            populateTable(filteredData);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+
+    function populateTable(data) {
+        const tableBody = document.querySelector('#dataTable tbody');
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.textContent = 'No data available';
+            cell.colSpan = 3;
+            row.appendChild(cell);
+            tableBody.appendChild(row);
+            return;
+        }
+
+        data.forEach(item => {
+            const row = document.createElement('tr');
+
+            const idCell = document.createElement('td');
+            const link = document.createElement('a');
+            link.href = `details.html?id=${item.id}`; // Assuming each item has an 'id' field
+            link.textContent = `Pitch ${item.id}`;
+            idCell.appendChild(link);
+            row.appendChild(idCell);
+
+            const speedCell = document.createElement('td');
+            speedCell.textContent = item.speed; // Assuming each item has a 'speed' field
+            row.appendChild(speedCell);
+
+            const resultCell = document.createElement('td');
+            resultCell.textContent = item.result; // Assuming each item has a 'result' field
+            row.appendChild(resultCell);
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Initial fetch to populate the table
+    fetchAndFilterData(new Event('submit'));
+</script>
+
+</body>
 </html>
